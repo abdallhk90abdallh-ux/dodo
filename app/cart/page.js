@@ -63,7 +63,7 @@ export default function CartPage() {
             Your cart is empty
           </h2>
           <p className="text-gray-600 mb-6">
-            Looks like you haven't added anything yet. Explore our latest
+            Looks like you haven&apos;t added anything yet. Explore our latest
             collection and find the perfect bag.
           </p>
           <div className="flex justify-center gap-4">
