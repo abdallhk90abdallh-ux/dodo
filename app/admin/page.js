@@ -1,14 +1,13 @@
 "use client";
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
+import ProductsAdmin from "@/components/ProductsAdmin";
+import OrdersAdmin from "@/components/OrdersAdmin";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
   const [activeTab, setActiveTab] = useState("products");
 
   useEffect(() => {
@@ -20,11 +19,6 @@ export default function AdminPage() {
 
   if (status === "loading") return <p>Loading...</p>;
   if (!session || session.user.role !== "admin") return null;
-
-
-
-
-  
 
   return (
     <div className="min-h-screen flex">
@@ -62,6 +56,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
 
 function ProductsAdmin() {
   const [products, setProducts] = useState([]);
