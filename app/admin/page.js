@@ -1,14 +1,11 @@
 "use client";
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
   const [activeTab, setActiveTab] = useState("products");
 
   useEffect(() => {
@@ -21,14 +18,8 @@ export default function AdminPage() {
   if (status === "loading") return <p>Loading...</p>;
   if (!session || session.user.role !== "admin") return null;
 
-
-
-
-  
-
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar */}
       <aside className="w-64 bg-white/80 backdrop-blur-md shadow-md p-6">
         <h1 className="text-2xl font-bold mb-8">🛍️ Admin Panel</h1>
         <nav className="flex flex-col gap-3">
@@ -55,7 +46,6 @@ export default function AdminPage() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-8 bg-white/60 backdrop-blur-md">
         {activeTab === "products" ? <ProductsAdmin /> : <OrdersAdmin />}
       </main>
@@ -66,13 +56,12 @@ export default function AdminPage() {
 function ProductsAdmin() {
   const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
-  name: "",
-  price: "",
-  image: "",
-  description: "",
-  category: "",
-});
-
+    name: "",
+    price: "",
+    image: "",
+    description: "",
+    category: "",
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -89,11 +78,19 @@ function ProductsAdmin() {
     const res = await fetch("/api/admin/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProduct),
+      body: JSON.stringify({ ...newProduct, price: Number(newProduct.price) }),
     });
     if (res.ok) {
-      setNewProduct({ name: "", price: "", image: "", description: "" });
+      setNewProduct({
+        name: "",
+        price: "",
+        image: "",
+        description: "",
+        category: "",
+      });
       fetchProducts();
+    } else {
+      alert("Failed to add product");
     }
   }
 
@@ -103,13 +100,13 @@ function ProductsAdmin() {
       method: "DELETE",
     });
     if (res.ok) fetchProducts();
+    else alert("Failed to delete product");
   }
 
   return (
     <div className="space-y-10">
       <h2 className="text-2xl font-semibold">📦 Manage Products</h2>
 
-      {/* Add Product Form */}
       <form
   onSubmit={handleAddProduct}
   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 bg-white shadow p-6 rounded-xl"
@@ -172,8 +169,6 @@ function ProductsAdmin() {
   </button>
 </form>
 
-
-      {/* Product List */}
       <div className="grid md:grid-cols-3 gap-6">
         {products.map((product) => (
           <div
@@ -187,10 +182,7 @@ function ProductsAdmin() {
             />
             <h3 className="font-semibold">{product.name}</h3>
             <p className="text-gray-500">${product.price}</p>
-            <p className="text-sm text-blue-600 font-medium capitalize">
-  {product.category}
-</p>
-
+            <p className="text-sm text-blue-600 font-medium capitalize">{product.category}</p>
             <p className="text-sm text-gray-400">{product.description}</p>
             <button
               onClick={() => handleDeleteProduct(product._id)}
@@ -236,10 +228,7 @@ function OrdersAdmin() {
       });
       if (!res.ok) throw new Error("Failed to update order");
       const updated = await res.json();
-
-      setOrders((prev) =>
-        prev.map((order) => (order._id === id ? updated : order))
-      );
+      setOrders((prev) => prev.map((order) => (order._id === id ? updated : order)));
     } catch (err) {
       console.error(err);
     }
@@ -255,7 +244,6 @@ function OrdersAdmin() {
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-6">🧾 Manage Orders</h2>
-
       {orders.length === 0 ? (
         <p className="text-gray-600">No orders found.</p>
       ) : (
@@ -284,9 +272,7 @@ function OrdersAdmin() {
                     <td className="p-3">
                       <select
                         value={order.status}
-                        onChange={(e) =>
-                          updateStatus(order._id, e.target.value)
-                        }
+                        onChange={(e) => updateStatus(order._id, e.target.value)}
                         className="border rounded-lg px-2 py-1 focus:outline-none focus:ring focus:ring-blue-200"
                       >
                         <option value="pending">Pending</option>
@@ -298,15 +284,11 @@ function OrdersAdmin() {
                     <td className="p-3 flex gap-3">
                       <button
                         onClick={() =>
-                          setExpandedOrder(
-                            expandedOrder === order._id ? null : order._id
-                          )
+                          setExpandedOrder(expandedOrder === order._id ? null : order._id)
                         }
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
-                        {expandedOrder === order._id
-                          ? "Hide Details"
-                          : "View Details"}
+                        {expandedOrder === order._id ? "Hide Details" : "View Details"}
                       </button>
                       <button
                         onClick={() => updateStatus(order._id, "cancelled")}
@@ -317,7 +299,6 @@ function OrdersAdmin() {
                     </td>
                   </tr>
 
-                  {/* Expanded order details */}
                   {expandedOrder === order._id && (
                     <tr className="bg-gray-50 border-t border-gray-200">
                       <td colSpan="7" className="p-4">
@@ -337,9 +318,7 @@ function OrdersAdmin() {
                                   className="w-16 h-16 rounded object-cover"
                                 />
                                 <div>
-                                  <h5 className="font-medium text-gray-800">
-                                    {item.name}
-                                  </h5>
+                                  <h5 className="font-medium text-gray-800">{item.name}</h5>
                                   <p className="text-sm text-gray-500">
                                     {item.quantity} × {item.price} EGP
                                   </p>
