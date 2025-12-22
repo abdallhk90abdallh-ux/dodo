@@ -20,7 +20,7 @@ export default function CategoryPage() {
       <h1 className="text-3xl font-bold mb-8 capitalize">
         {category} Bags
       </h1>
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {products.length > 0 ? (
           products.map((product) => (
             <ProductCard key={product._id} product={product} />

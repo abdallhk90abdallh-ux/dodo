@@ -25,7 +25,7 @@ export default function ProductsPage() {
     }
   }
 
-  const categories = ["all", "back", "leather", "cross", "kids"];
+  const categories = ["all", "man", "woman", "sport", "kids"];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -58,7 +58,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {filtered.length > 0 ? (
           filtered.map((product) => (
             <div key={product._id}>

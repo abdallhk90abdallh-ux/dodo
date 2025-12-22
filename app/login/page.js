@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div className="flex justify-center items-center min-h-screen">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-md w-96 space-y-4"
+        className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md mx-4 space-y-4"
       >
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
 

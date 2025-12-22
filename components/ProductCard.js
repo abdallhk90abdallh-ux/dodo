@@ -14,7 +14,7 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="group bg-white rounded-3xl p-6 hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center border border-gray-100 max-w-[280px] mx-auto relative overflow-hidden">
+    <div className="group bg-white rounded-3xl p-6 hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center border border-gray-100 w-full max-w-[320px] mx-auto relative overflow-hidden">
       {/* Product Badge */}
       {product.isNew && (
         <span className="absolute top-4 left-4 bg-black text-white text-xs font-medium px-3 py-1 rounded-full">
@@ -23,7 +23,7 @@ export default function ProductCard({ product }) {
       )}
 
       {/* Product Image */}
-      <div className="w-48 h-48 overflow-hidden rounded-2xl mb-4">
+      <div className="w-36 h-36 md:w-48 md:h-48 overflow-hidden rounded-2xl mb-4">
         <img
           src={product.image}
           alt={product.name}

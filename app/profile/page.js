@@ -52,7 +52,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex justify-center items-center min-h-screen">
-      <div className="bg-white shadow-xl rounded-2xl p-8 w-[400px]">
+      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md mx-4">
         <h1 className="text-2xl font-bold text-center mb-6">Your Profile</h1>
 
         {/* Profile Form */}

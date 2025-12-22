@@ -139,9 +139,9 @@ function ProductsAdmin() {
   required
 >
   <option value="">Select Category</option>
-  <option value="back">Back</option>
-  <option value="leather">Leather</option>
-  <option value="cross">Cross</option>
+  <option value="man">Man</option>
+  <option value="woman">Woman</option>
+  <option value="sport">Sport</option>
   <option value="kids">Kids</option>
 </select>
 
