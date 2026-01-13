@@ -105,12 +105,12 @@ export default function CartPage() {
           <section className="lg:col-span-2 space-y-4">
             {cart.map((item) => (
               <div
-                key={item._id}
+                key={item.cartId}
                 className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition"
               >
                 <div className="w-28 h-20 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
                   <img
-                    src={item.image}
+                    src={item.image || "/bag-placeholder.jpg"}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />
@@ -138,14 +138,14 @@ export default function CartPage() {
                     {/* Quantity controls */}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => decreaseQuantity(item._id)}
+                        onClick={() => decreaseQuantity(item.cartId)}
                         className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
                       >
                         −
                       </button>
                       <span className="w-6 text-center font-medium">{item.quantity || 1}</span>
                       <button
-                        onClick={() => increaseQuantity(item._id)}
+                        onClick={() => increaseQuantity(item.cartId)}
                         className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
                       >
                         +
@@ -153,7 +153,7 @@ export default function CartPage() {
                     </div>
 
                     <button
-                      onClick={() => removeFromCart(item._id)}
+                      onClick={() => removeFromCart(item.cartId)}
                       className="text-sm text-red-600 hover:text-red-800 font-medium"
                     >
                       Remove

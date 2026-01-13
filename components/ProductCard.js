@@ -7,8 +7,23 @@ export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
 
+  const images = (product.images && product.images.length) ? product.images : (product.image ? [product.image] : []);
+  const [index, setIndex] = useState(0);
+  const currentImage = images[index] || "/bag-placeholder.jpg";
+
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    if (images.length <= 1) return;
+    setIndex((i) => (i - 1 + images.length) % images.length);
+  };
+  const handleNext = (e) => {
+    e.stopPropagation();
+    if (images.length <= 1) return;
+    setIndex((i) => (i + 1) % images.length);
+  };
+
   const handleAddToCart = () => {
-    addToCart(product);
+    addToCart(product, currentImage);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500); // Reset after 1.5 seconds
   };
@@ -22,13 +37,35 @@ export default function ProductCard({ product }) {
         </span>
       )}
 
-      {/* Product Image */}
-      <div className="w-36 h-36 md:w-48 md:h-48 overflow-hidden rounded-2xl mb-4">
+      {/* Product Image with arrows */}
+      <div className="w-36 h-36 md:w-48 md:h-48 overflow-hidden rounded-2xl mb-4 relative">
         <img
-          src={product.image}
+          src={currentImage}
           alt={product.name}
           className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
         />
+
+        {/* Left arrow */}
+        {images.length > 1 && (
+          <button
+            onClick={handlePrev}
+            aria-label="Previous image"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full shadow hover:bg-white"
+          >
+            ‹
+          </button>
+        )}
+
+        {/* Right arrow */}
+        {images.length > 1 && (
+          <button
+            onClick={handleNext}
+            aria-label="Next image"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full shadow hover:bg-white"
+          >
+            ›
+          </button>
+        )}
       </div>
 
       {/* Product Info */}

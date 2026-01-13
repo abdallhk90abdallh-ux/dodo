@@ -34,6 +34,16 @@ export default function AdminPage() {
             Products
           </button>
           <button
+            onClick={() => setActiveTab("categories")}
+            className={`text-left px-4 py-2 rounded-lg transition ${
+              activeTab === "categories"
+                ? "bg-blue-600 text-white"
+                : "hover:bg-blue-100"
+            }`}
+          >
+            Categories
+          </button>
+          <button
             onClick={() => setActiveTab("orders")}
             className={`text-left px-4 py-2 rounded-lg transition ${
               activeTab === "orders"
@@ -43,11 +53,29 @@ export default function AdminPage() {
           >
             Orders
           </button>
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`text-left px-4 py-2 rounded-lg transition ${
+              activeTab === "settings"
+                ? "bg-blue-600 text-white"
+                : "hover:bg-blue-100"
+            }`}
+          >
+            Settings
+          </button>
         </nav>
       </aside>
 
       <main className="flex-1 p-8 bg-white/60 backdrop-blur-md">
-        {activeTab === "products" ? <ProductsAdmin /> : <OrdersAdmin />}
+        {activeTab === "products" ? (
+          <ProductsAdmin />
+        ) : activeTab === "categories" ? (
+          <CategoriesAdmin />
+        ) : activeTab === "orders" ? (
+          <OrdersAdmin />
+        ) : (
+          <SettingsAdmin />
+        )}
       </main>
     </div>
   );
@@ -55,16 +83,19 @@ export default function AdminPage() {
 
 function ProductsAdmin() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
-    image: "",
+    // comma separated URLs input
+    imagesInput: "",
     description: "",
     category: "",
   });
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   async function fetchProducts() {
@@ -73,18 +104,43 @@ function ProductsAdmin() {
     setProducts(data);
   }
 
+  async function fetchCategories() {
+    try {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      const data = await res.json();
+      setCategories(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async function handleAddProduct(e) {
     e.preventDefault();
+    const images = newProduct.imagesInput
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const payload = {
+      name: newProduct.name,
+      price: Number(newProduct.price),
+      images,
+      // keep first image for backward compatibility
+      image: images[0] || "",
+      description: newProduct.description,
+      category: newProduct.category,
+    };
+
     const res = await fetch("/api/admin/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newProduct, price: Number(newProduct.price) }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       setNewProduct({
         name: "",
         price: "",
-        image: "",
+        imagesInput: "",
         description: "",
         category: "",
       });
@@ -136,18 +192,19 @@ function ProductsAdmin() {
   required
 >
   <option value="">Select Category</option>
-  <option value="man">Man</option>
-  <option value="woman">Woman</option>
-  <option value="sport">Sport</option>
-  <option value="kids">Kids</option>
+  {categories.map((cat) => (
+    <option key={cat._id} value={cat.name}>
+      {cat.name}
+    </option>
+  ))}
 </select>
 
 
   <input
     type="text"
-    placeholder="Image URL"
-    value={newProduct.image}
-    onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
+    placeholder="Image URLs (comma separated)"
+    value={newProduct.imagesInput}
+    onChange={(e) => setNewProduct({ ...newProduct, imagesInput: e.target.value })}
     className="border p-2 rounded"
   />
 
@@ -176,7 +233,7 @@ function ProductsAdmin() {
             className="bg-white shadow-md rounded-xl p-4 flex flex-col items-center text-center"
           >
             <img
-              src={product.image || "/bag-placeholder.jpg"}
+              src={product.images?.[0] || product.image || "/bag-placeholder.jpg"}
               alt={product.name}
               className="w-40 h-40 object-cover rounded-lg mb-4"
             />
@@ -339,6 +396,254 @@ function OrdersAdmin() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function SettingsAdmin() {
+  const [loading, setLoading] = useState(true);
+  const [heroTitle, setHeroTitle] = useState("");
+  const [heroSubtitle, setHeroSubtitle] = useState("");
+  const [heroImage, setHeroImage] = useState("");
+  const [heroImageEnabled, setHeroImageEnabled] = useState(false);
+  const [heroImageWidth, setHeroImageWidth] = useState(224);
+  const [heroImageHeight, setHeroImageHeight] = useState(0);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  async function fetchSettings() {
+    try {
+      const res = await fetch("/api/settings");
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      const data = await res.json();
+      setHeroTitle(data.heroTitle || "");
+      setHeroSubtitle(data.heroSubtitle || "");
+      setHeroImage(data.heroImage || "");
+      setHeroImageEnabled(!!data.heroImageEnabled);
+      setHeroImageWidth(data.heroImageWidth || 224);
+      setHeroImageHeight(data.heroImageHeight || 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ heroTitle, heroSubtitle, heroImage, heroImageEnabled, heroImageWidth, heroImageHeight }),
+      });
+      if (!res.ok) throw new Error("Failed to save settings");
+      alert("Settings saved");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save settings");
+    }
+  }
+
+
+
+  if (loading) return <div>Loading settings...</div>;
+
+  return (
+    <div className="max-w-3xl">
+      <h2 className="text-2xl font-semibold mb-6">⚙️ Site Settings</h2>
+      <form onSubmit={handleSave} className="space-y-4 bg-white p-6 rounded-xl shadow">
+        <label className="block">
+          <div className="text-sm font-medium mb-1">Hero Title (H1)</div>
+          <input
+            className="w-full border rounded px-3 py-2"
+            value={heroTitle}
+            onChange={(e) => setHeroTitle(e.target.value)}
+          />
+        </label>
+
+        <label className="block">
+          <div className="text-sm font-medium mb-1">Hero Subtitle (P)</div>
+          <textarea
+            className="w-full border rounded px-3 py-2"
+            rows={3}
+            value={heroSubtitle}
+            onChange={(e) => setHeroSubtitle(e.target.value)}
+          />
+        </label>
+
+        <label className="block">
+          <div className="text-sm font-medium mb-1">Hero Image URL (optional)</div>
+          <input
+            className="w-full border rounded px-3 py-2"
+            value={heroImage}
+            onChange={(e) => setHeroImage(e.target.value)}
+            placeholder="https://..."
+          />
+        </label>
+
+        <div className="flex items-center gap-4">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={heroImageEnabled}
+              onChange={(e) => setHeroImageEnabled(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="text-sm">Show hero image on homepage</span>
+          </label>
+
+          <div className="flex gap-2 items-center">
+            <label className="text-sm">Width (px)</label>
+            <input type="number" value={heroImageWidth} onChange={(e) => setHeroImageWidth(Number(e.target.value) || 0)} className="w-24 border px-2 py-1 rounded" />
+          </div>
+
+          <div className="flex gap-2 items-center">
+            <label className="text-sm">Height (px, 0 = auto)</label>
+            <input type="number" value={heroImageHeight} onChange={(e) => setHeroImageHeight(Number(e.target.value) || 0)} className="w-24 border px-2 py-1 rounded" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+        </div>
+
+        <div className="mt-4">
+          <h4 className="text-sm font-medium mb-2">Preview</h4>
+          <div className="p-4 border rounded">
+            <h3 className="text-xl font-bold">{heroTitle || "(empty)"}</h3>
+            {heroImageEnabled && heroImage ? (
+              <img
+                src={heroImage}
+                alt="Hero"
+                style={{ width: heroImageWidth ? `${heroImageWidth}px` : undefined, height: heroImageHeight ? `${heroImageHeight}px` : 'auto', maxWidth: '100%' }}
+                className="object-cover rounded-lg my-3 mx-auto"
+              />
+            ) : null}
+            <p className="text-sm text-gray-600">{heroSubtitle || "(empty)"}</p>
+          </div>
+
+          <div className="mt-6">
+            <em>Categories are now managed in the new <strong>Categories</strong> tab.</em>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function CategoriesAdmin() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  async function fetchCategories() {
+    try {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      const data = await res.json();
+      setCategories(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function addCategory(e) {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to add category");
+      setNewCategoryName("");
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add category");
+    }
+  }
+
+  function startEditCategory(cat) {
+    setEditingCategory(cat._id);
+    setEditingCategoryName(cat.name);
+  }
+
+  async function saveEditCategory(e) {
+    e.preventDefault();
+    if (!editingCategoryName.trim()) return;
+    try {
+      const res = await fetch("/api/categories", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingCategory, name: editingCategoryName.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to update category");
+      setEditingCategory(null);
+      setEditingCategoryName("");
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update category");
+    }
+  }
+
+  async function deleteCategory(catId) {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+    try {
+      const res = await fetch(`/api/categories?id=${catId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete category");
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete category");
+    }
+  }
+
+  if (loading) return <div>Loading categories...</div>;
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-6">🗂️ Manage Categories</h2>
+
+      <form onSubmit={addCategory} className="flex gap-2 mb-4 max-w-md">
+        <input className="border px-3 py-2 rounded flex-1" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category name" />
+        <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Add</button>
+      </form>
+
+      <div className="space-y-2">
+        {categories.map((cat) => (
+          <div key={cat._id} className="flex items-center justify-between gap-3 border p-2 rounded">
+            {editingCategory === cat._id ? (
+              <form onSubmit={saveEditCategory} className="flex gap-2 items-center w-full">
+                <input className="border px-2 py-1 rounded flex-1" value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} />
+                <button className="px-2 py-1 bg-green-600 text-white rounded">Save</button>
+                <button onClick={() => setEditingCategory(null)} type="button" className="px-2 py-1 bg-gray-200 rounded">Cancel</button>
+              </form>
+            ) : (
+              <>
+                <div className="font-medium">{cat.name}</div>
+                <div className="flex gap-2">
+                  <button onClick={() => startEditCategory(cat)} className="px-2 py-1 bg-yellow-400 rounded">Edit</button>
+                  <button onClick={() => deleteCategory(cat._id)} className="px-2 py-1 bg-red-500 text-white rounded">Delete</button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

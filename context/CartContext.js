@@ -19,39 +19,53 @@ export function CartProvider({ children }) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product) => {
+  const addToCart = (product, selectedImage) => {
+    const image = selectedImage || (product.images && product.images.length ? product.images[0] : product.image);
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item._id === product._id);
+      const cartId = `${product._id}_${image}`;
+      const existing = prevCart.find((item) => item.cartId === cartId);
       if (existing) {
         return prevCart.map((item) =>
-          item._id === product._id
+          item.cartId === cartId
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prevCart, { ...product, quantity: 1 }];
+      return [
+        ...prevCart,
+        {
+          cartId,
+          _id: product._id,
+          productId: product._id,
+          name: product.name,
+          price: product.price,
+          image,
+          description: product.description,
+          quantity: 1,
+        },
+      ];
     });
   };
 
-  const removeFromCart = (id) => {
-    setCart((prevCart) => prevCart.filter((item) => item._id !== id));
+  const removeFromCart = (cartId) => {
+    setCart((prevCart) => prevCart.filter((item) => item.cartId !== cartId));
   };
 
   const clearCart = () => setCart([]);
 
-  function increaseQuantity(id) {
+  function increaseQuantity(cartId) {
     setCart((prev) =>
       prev.map((item) =>
-        item._id === id ? { ...item, quantity: item.quantity + 1 } : item
+        item.cartId === cartId ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
   }
 
-  function decreaseQuantity(id) {
+  function decreaseQuantity(cartId) {
     setCart((prev) =>
       prev
         .map((item) =>
-          item._id === id
+          item.cartId === cartId
             ? { ...item, quantity: Math.max(1, item.quantity - 1) }
             : item
         )

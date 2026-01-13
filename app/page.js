@@ -5,8 +5,16 @@ import Image from "next/image";
 
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
+  const [heroTitle, setHeroTitle] = useState("Premium Bags for Every Journey");
+  const [heroSubtitle, setHeroSubtitle] = useState(
+    "Discover our collection of handcrafted bags designed for style and functionality."
+  );
+  const [heroImage, setHeroImage] = useState("");
+  const [heroImageEnabled, setHeroImageEnabled] = useState(false);
+  const [heroImageWidth, setHeroImageWidth] = useState(224);
+  const [heroImageHeight, setHeroImageHeight] = useState(0);
 
-  // Fetch products and pick the first 4 (or any logic you prefer)
+  // Fetch products and featured + site settings
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
@@ -15,6 +23,21 @@ export default function HomePage() {
         setFeatured(data.slice(0, 4));
       })
       .catch((err) => console.error("Failed to load featured products:", err));
+
+    // fetch site settings
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((s) => {
+        if (s) {
+          if (s.heroTitle) setHeroTitle(s.heroTitle);
+          if (s.heroSubtitle) setHeroSubtitle(s.heroSubtitle);
+          if (s.heroImage) setHeroImage(s.heroImage);
+          setHeroImageEnabled(!!s.heroImageEnabled);
+          if (s.heroImageWidth) setHeroImageWidth(s.heroImageWidth);
+          if (s.heroImageHeight) setHeroImageHeight(s.heroImageHeight);
+        }
+      })
+      .catch((err) => console.error("Failed to load settings:", err));
   }, []);
 
   return (
@@ -24,12 +47,20 @@ export default function HomePage() {
         {/* Left Content */}
         <div className="lg:w-1/2 space-y-6 text-center lg:text-left mb-10 lg:mb-0">
           <h1 className="text-4xl lg:text-6xl font-bold text-gray-900">
-            Premium Bags for
-            <span className="text-blue-600"> Every Journey</span>
+            {heroTitle.split(" ")[0]} <span className="text-blue-600">{heroTitle.split(" ").slice(1).join(" ")}</span>
           </h1>
+          {/* Optional hero image (admin-controlled) */}
+          {heroImageEnabled && heroImage ? (
+            <img
+              src={heroImage}
+              alt="Hero"
+              style={{ width: heroImageWidth ? `${heroImageWidth}px` : undefined, height: heroImageHeight ? `${heroImageHeight}px` : 'auto', maxWidth: '100%' }}
+              className="object-cover rounded-lg mx-auto my-4 shadow-md"
+            />
+          ) : null}
+
           <p className="text-lg text-gray-600 max-w-xl">
-            Discover our collection of handcrafted bags designed for style and functionality.
-            From everyday essentials to luxury statements.
+            {heroSubtitle}
           </p>
           <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
             <Link
@@ -58,7 +89,7 @@ export default function HomePage() {
                 className="relative h-48 lg:h-64 rounded-2xl overflow-hidden group"
               >
                 <img
-                  src={product.image}
+                  src={product.images?.[0] || product.image || "/bag-placeholder.jpg"}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
