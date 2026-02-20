@@ -59,7 +59,7 @@ export default function HomePage() {
             />
           ) : null}
 
-          <p className="text-lg text-gray-600 max-w-xl">
+          <p className="text-lg tex t-gray-600 max-w-xl">
             {heroSubtitle}
           </p>
           <div className="flex flex-wrap gap-4 justify-center lg:justify-start">

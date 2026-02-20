@@ -74,10 +74,19 @@ export default function ProductCard({ product }) {
           {product.name}
         </h3>
         <p className="text-gray-500 text-sm">{product.description}</p>
-        <p className="text-2xl font-bold text-gray-900 flex items-start justify-center">
-          <span className="text-xs font-medium mr-1 mt-1">EGP</span>
-          <span>{product.price}</span>
-        </p>
+        <div className="flex items-center justify-center gap-4">
+          <p className="text-2xl font-bold text-gray-900 flex items-start">
+            <span className="text-xs font-medium mr-1 mt-1">EGP</span>
+            <span>{product.price}</span>
+          </p>
+
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="text-yellow-400 font-semibold">
+              {product.avgRating ? product.avgRating.toFixed?.(1) ?? product.avgRating : "0.0"}
+            </div>
+            <div className="text-gray-400">( {product.ratingsCount || 0} )</div>
+          </div>
+        </div>
 
         {/* Add to Cart Button */}
         <button

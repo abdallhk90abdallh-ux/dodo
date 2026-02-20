@@ -291,6 +291,19 @@ function OrdersAdmin() {
     }
   }
 
+  async function handleDeleteOrder(id) {
+    if (!confirm("Are you sure you want to delete this order?")) return;
+    try {
+      const res = await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete order");
+      // refresh list
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete order");
+    }
+  }
+
   if (loading)
     return (
       <div className="flex items-center justify-center text-gray-500 text-lg py-20">
@@ -352,6 +365,12 @@ function OrdersAdmin() {
                         className="text-red-600 hover:text-red-800 font-medium"
                       >
                         Cancel
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order._id)}
+                        className="text-red-700 hover:text-red-900 font-medium"
+                      >
+                        Delete
                       </button>
                     </td>
                   </tr>

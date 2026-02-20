@@ -14,6 +14,7 @@ export default function Navbar() {
   const links = [
     { href: "/", label: "Home", icon: <Home size={18} /> },
     { href: "/shop", label: "Products", icon: <ShoppingBag size={18} /> },
+    { href: "/orders", label: "Orders", icon: <ShoppingCart size={18} /> },
     { href: "/cart", label: "Cart", icon: <ShoppingCart size={18} /> },
   ];
 

@@ -7,6 +7,7 @@ export default function OrdersPage() {
   const { data: session, status } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ratedProducts, setRatedProducts] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -22,6 +23,8 @@ export default function OrdersPage() {
         if (!res.ok) throw new Error("Failed to fetch orders");
         const data = await res.json();
         setOrders(data);
+        // initialize rated products local state (none rated yet)
+        setRatedProducts([]);
       } catch (err) {
         console.error(err);
       } finally {
@@ -108,9 +111,49 @@ export default function OrdersPage() {
                         </p>
                       </div>
                     </div>
-                    <p className="font-semibold text-gray-900">
-                      EGP {item.price * item.quantity}
-                    </p>
+                    <div className="flex flex-col items-end">
+                      <p className="font-semibold text-gray-900">EGP {item.price * item.quantity}</p>
+
+                      <div className="mt-2 flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => {
+                          const rawPid = item.productId || item._id;
+                          // normalize product id to string
+                          const pid = rawPid && rawPid._id ? String(rawPid._id) : String(rawPid);
+                          const isRated = ratedProducts.includes(pid);
+
+                          return (
+                            <button
+                              key={s}
+                              onClick={async () => {
+                                if (isRated) return;
+                                try {
+                                  const res = await fetch('/api/products/rate', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ productId: pid, rating: s })
+                                  });
+                                  if (!res.ok) {
+                                    const errBody = await res.json().catch(() => ({}));
+                                    throw new Error(errBody.error || 'Failed to submit rating');
+                                  }
+
+                                  // mark locally as rated; UI will persist after refresh because DB updated
+                                  setRatedProducts((prev) => [...prev, pid]);
+                                  alert('Thanks for your rating!');
+                                } catch (err) {
+                                  console.error(err);
+                                  alert(err.message || 'Failed to submit rating');
+                                }
+                              }}
+                              className={`text-xl leading-none ${isRated ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                              aria-label={`Rate ${s} star`}
+                            >
+                              ★
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

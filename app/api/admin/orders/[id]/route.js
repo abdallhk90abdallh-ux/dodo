@@ -39,4 +39,34 @@ export async function PUT(req, { params }) {
     });
   }
 }
+
+  export async function DELETE(req, { params }) {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session || session.user.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+        });
+      }
+
+      await dbConnect();
+
+      const awaitedParams = await params;
+      const id = awaitedParams.id;
+
+      const deleted = await Order.findByIdAndDelete(id);
+      if (!deleted) {
+        return new Response(JSON.stringify({ error: "Order not found" }), {
+          status: 404,
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    } catch (error) {
+      console.error("Delete Order Error:", error);
+      return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+        status: 500,
+      });
+    }
+  }
 // ...existing code...
