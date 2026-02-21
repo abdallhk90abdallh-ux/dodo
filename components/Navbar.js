@@ -21,6 +21,11 @@ export default function Navbar() {
   // Show admin link only if user is admin
   if (session?.user?.role === "admin") {
     links.push({
+      href: "/admin/dashboard",
+      label: "Dashboard",
+      icon: <Shield size={18} />,
+    });
+    links.push({
       href: "/admin",
       label: "Admin",
       icon: <Shield size={18} />,
