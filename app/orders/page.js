@@ -23,8 +23,32 @@ export default function OrdersPage() {
         if (!res.ok) throw new Error("Failed to fetch orders");
         const data = await res.json();
         setOrders(data);
-        // initialize rated products local state (none rated yet)
-        setRatedProducts([]);
+          // initialize rated products local state from existing reviews (if any)
+          try {
+            const prodRes = await fetch('/api/products');
+            if (prodRes.ok) {
+              const allProducts = await prodRes.json();
+              const ratingsMap = {};
+              data.forEach((order) => {
+                order.items.forEach((item) => {
+                  const rawPid = item.productId || item._id;
+                  const pid = rawPid && rawPid._id ? String(rawPid._id) : String(rawPid);
+                  const prod = allProducts.find((p) => String(p._id) === pid);
+                  if (prod?.reviews?.length) {
+                    const rev = prod.reviews.find((r) => String(r.user) === String(session?.user?.id));
+                    if (rev) ratingsMap[pid] = rev.rating;
+                  }
+                });
+              });
+              setRatedProducts(ratingsMap);
+            } else {
+              // fallback to empty map if products couldn't be fetched
+              setRatedProducts({});
+            }
+          } catch (err) {
+            console.error('Init ratings error', err);
+            setRatedProducts({});
+          }
       } catch (err) {
         console.error(err);
       } finally {
