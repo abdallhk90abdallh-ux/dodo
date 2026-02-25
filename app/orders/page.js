@@ -7,7 +7,10 @@ export default function OrdersPage() {
   const { data: session, status } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [ratedProducts, setRatedProducts] = useState([]);
+
+  // store rating value per productId
+  const [ratedProducts, setRatedProducts] = useState({});
+
   const router = useRouter();
 
   useEffect(() => {
@@ -23,32 +26,7 @@ export default function OrdersPage() {
         if (!res.ok) throw new Error("Failed to fetch orders");
         const data = await res.json();
         setOrders(data);
-          // initialize rated products local state from existing reviews (if any)
-          try {
-            const prodRes = await fetch('/api/products');
-            if (prodRes.ok) {
-              const allProducts = await prodRes.json();
-              const ratingsMap = {};
-              data.forEach((order) => {
-                order.items.forEach((item) => {
-                  const rawPid = item.productId || item._id;
-                  const pid = rawPid && rawPid._id ? String(rawPid._id) : String(rawPid);
-                  const prod = allProducts.find((p) => String(p._id) === pid);
-                  if (prod?.reviews?.length) {
-                    const rev = prod.reviews.find((r) => String(r.user) === String(session?.user?.id));
-                    if (rev) ratingsMap[pid] = rev.rating;
-                  }
-                });
-              });
-              setRatedProducts(ratingsMap);
-            } else {
-              // fallback to empty map if products couldn't be fetched
-              setRatedProducts({});
-            }
-          } catch (err) {
-            console.error('Init ratings error', err);
-            setRatedProducts({});
-          }
+        setRatedProducts({});
       } catch (err) {
         console.error(err);
       } finally {
@@ -57,7 +35,13 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [session, status]);
+  }, [session, status, router]);
+
+  const getStarColor = (rating) => {
+    if (rating <= 2) return "text-red-500";
+    if (rating === 3) return "text-yellow-400";
+    return "text-green-500";
+  };
 
   if (loading)
     return (
@@ -117,69 +101,103 @@ export default function OrdersPage() {
               </div>
 
               <div className="divide-y divide-gray-100">
-                {order.items.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between py-3"
-                  >
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 rounded-md object-cover border"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-500">
-                          Qty: {item.quantity}
-                        </p>
+                {order.items.map((item, i) => {
+                  const rawPid = item.productId || item._id;
+                  const pid =
+                    rawPid && rawPid._id
+                      ? String(rawPid._id)
+                      : String(rawPid);
+
+                  const ratingValue = ratedProducts[pid] || 0;
+                  const isRated = ratingValue > 0;
+
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between py-3"
+                    >
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 rounded-md object-cover border"
+                        />
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {item.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Qty: {item.quantity}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <p className="font-semibold text-gray-900">EGP {item.price * item.quantity}</p>
 
-                      <div className="mt-2 flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => {
-                          const rawPid = item.productId || item._id;
-                          // normalize product id to string
-                          const pid = rawPid && rawPid._id ? String(rawPid._id) : String(rawPid);
-                          const isRated = ratedProducts.includes(pid);
+                      <div className="flex flex-col items-end">
+                        <p className="font-semibold text-gray-900">
+                          EGP {item.price * item.quantity}
+                        </p>
 
-                          return (
+                        <div className="mt-2 flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
                             <button
                               key={s}
+                              disabled={isRated}
                               onClick={async () => {
                                 if (isRated) return;
                                 try {
-                                  const res = await fetch('/api/products/rate', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ productId: pid, rating: s })
-                                  });
+                                  const res = await fetch(
+                                    "/api/products/rate",
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        productId: pid,
+                                        rating: s,
+                                      }),
+                                    }
+                                  );
+
                                   if (!res.ok) {
-                                    const errBody = await res.json().catch(() => ({}));
-                                    throw new Error(errBody.error || 'Failed to submit rating');
+                                    const errBody = await res
+                                      .json()
+                                      .catch(() => ({}));
+                                    throw new Error(
+                                      errBody.error ||
+                                        "Failed to submit rating"
+                                    );
                                   }
 
-                                  // mark locally as rated; UI will persist after refresh because DB updated
-                                  setRatedProducts((prev) => [...prev, pid]);
-                                  alert('Thanks for your rating!');
+                                  setRatedProducts((prev) => ({
+                                    ...prev,
+                                    [pid]: s,
+                                  }));
+
+                                  alert("Thanks for your rating!");
                                 } catch (err) {
                                   console.error(err);
-                                  alert(err.message || 'Failed to submit rating');
+                                  alert(
+                                    err.message ||
+                                      "Failed to submit rating"
+                                  );
                                 }
                               }}
-                              className={`text-xl leading-none ${isRated ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                              className={`text-xl leading-none transition ${
+                                s <= ratingValue
+                                  ? getStarColor(ratingValue)
+                                  : "text-gray-300 hover:text-yellow-400"
+                              }`}
                               aria-label={`Rate ${s} star`}
                             >
                               ★
                             </button>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-4 flex justify-between text-sm text-gray-600">
