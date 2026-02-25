@@ -8,8 +8,9 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // store rating value per productId
+  // store rating value per product
   const [ratedProducts, setRatedProducts] = useState({});
+  const [hoveredStars, setHoveredStars] = useState({});
 
   const router = useRouter();
 
@@ -109,6 +110,7 @@ export default function OrdersPage() {
                       : String(rawPid);
 
                   const ratingValue = ratedProducts[pid] || 0;
+                  const previewValue = hoveredStars[pid] || ratingValue;
                   const isRated = ratingValue > 0;
 
                   return (
@@ -142,8 +144,23 @@ export default function OrdersPage() {
                             <button
                               key={s}
                               disabled={isRated}
+                              onMouseEnter={() =>
+                                !isRated &&
+                                setHoveredStars((prev) => ({
+                                  ...prev,
+                                  [pid]: s,
+                                }))
+                              }
+                              onMouseLeave={() =>
+                                !isRated &&
+                                setHoveredStars((prev) => ({
+                                  ...prev,
+                                  [pid]: 0,
+                                }))
+                              }
                               onClick={async () => {
                                 if (isRated) return;
+
                                 try {
                                   const res = await fetch(
                                     "/api/products/rate",
@@ -174,6 +191,11 @@ export default function OrdersPage() {
                                     [pid]: s,
                                   }));
 
+                                  setHoveredStars((prev) => ({
+                                    ...prev,
+                                    [pid]: 0,
+                                  }));
+
                                   alert("Thanks for your rating!");
                                 } catch (err) {
                                   console.error(err);
@@ -184,9 +206,9 @@ export default function OrdersPage() {
                                 }
                               }}
                               className={`text-xl leading-none transition ${
-                                s <= ratingValue
-                                  ? getStarColor(ratingValue)
-                                  : "text-gray-300 hover:text-yellow-400"
+                                s <= previewValue
+                                  ? getStarColor(previewValue)
+                                  : "text-gray-300"
                               }`}
                               aria-label={`Rate ${s} star`}
                             >
