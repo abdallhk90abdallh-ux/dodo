@@ -258,14 +258,26 @@ function OrdersAdmin() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  async function fetchOrders() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchOrders(searchText);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  async function fetchOrders(search = "") {
+    setLoading(true);
+
     try {
-      const res = await fetch("/api/admin/orders");
+      const query = search ? `?search=${encodeURIComponent(search)}` : "";
+      const res = await fetch(`/api/admin/orders${query}`);
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
       setOrders(data);
@@ -314,6 +326,21 @@ function OrdersAdmin() {
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-6">🧾 Manage Orders</h2>
+      <div className="mb-4 flex flex-col sm:flex-row gap-2 items-center">
+        <input
+          type="text"
+          placeholder="Search client name, email, phone, or order ID"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          className="w-full sm:w-96 border rounded-lg px-3 py-2"
+        />
+        <button
+          onClick={() => fetchOrders(searchText)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          Search
+        </button>
+      </div>
       {orders.length === 0 ? (
         <p className="text-gray-600">No orders found.</p>
       ) : (
