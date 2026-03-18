@@ -75,6 +75,17 @@ export default function TestProductsPage() {
             <p className="my-2 text-gray-700">{product.description}</p>
             <p className="text-sm text-gray-500">Current avg rating: {product.avgRating || 0} ({product.ratingsCount || 0} votes)</p>
 
+            {product.sizes && Object.keys(product.sizes || {}).length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mt-3">
+                {Object.entries(product.sizes || {}).map(([size, qty]) => (
+                  <div key={size} className={`border p-2 rounded text-center text-xs ${qty > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-400"}`}>
+                    {size}
+                    <div className="text-[10px]">{qty} left</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center gap-2 mt-3">
               <label className="text-sm">Your rating:</label>
               <select

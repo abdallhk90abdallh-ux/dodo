@@ -6,8 +6,18 @@ import { useCart } from "@/context/CartContext";
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [showSizeOptions, setShowSizeOptions] = useState(false);
 
-  const images = (product.images && product.images.length) ? product.images : (product.image ? [product.image] : []);
+  const availableSizes = product.sizes
+    ? Object.entries(product.sizes || {}).filter(([, qty]) => qty > 0)
+    : [];
+
+  const images = (product.images && product.images.length)
+    ? product.images
+    : product.image
+    ? [product.image]
+    : [];
   const [index, setIndex] = useState(0);
   const currentImage = images[index] || "/bag-placeholder.jpg";
 
@@ -23,7 +33,21 @@ export default function ProductCard({ product }) {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, currentImage);
+    let chosenSize = selectedSize;
+
+    if (availableSizes.length > 0) {
+      if (!chosenSize) {
+        if (product.requiresSize) {
+          alert("Please select a size first");
+          return;
+        }
+
+        // auto-pick first available size when not required
+        chosenSize = availableSizes[0]?.[0] || "";
+      }
+    }
+
+    addToCart(product, currentImage, chosenSize);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500); // Reset after 1.5 seconds
   };
@@ -87,6 +111,46 @@ export default function ProductCard({ product }) {
             <div className="text-gray-400">( {product.ratingsCount || 0} )</div>
           </div>
         </div>
+
+        {availableSizes.length > 0 && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowSizeOptions((prev) => !prev)}
+              className="w-full px-4 py-2 font-medium text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            >
+              {showSizeOptions ? "Hide size options" : "Show size options"}
+            </button>
+
+            {showSizeOptions && (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {availableSizes.map(([size, qty]) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setSelectedSize(size)}
+                    className={`aspect-square flex flex-col justify-center items-center rounded-lg border text-sm font-medium transition ${
+                      selectedSize === size
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-black"
+                    }`}
+                  >
+                    {size}
+                    <span className="block text-xs text-gray-500">{qty} left</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selectedSize && (
+              <p className="mt-2 text-xs text-gray-500">Selected size: <strong>{selectedSize}</strong></p>
+            )}
+
+            {!selectedSize && showSizeOptions && (
+              <p className="mt-2 text-xs text-red-500">Please choose a size before adding to cart.</p>
+            )}
+          </div>
+        )}
 
         {/* Add to Cart Button */}
         <button

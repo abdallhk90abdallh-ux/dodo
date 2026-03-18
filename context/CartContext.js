@@ -19,10 +19,13 @@ export function CartProvider({ children }) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product, selectedImage) => {
+  const addToCart = (product, selectedImage, selectedSize = "") => {
     const image = selectedImage || (product.images && product.images.length ? product.images[0] : product.image);
+
+    const size = selectedSize || "";
+    const cartId = `${product._id}_${image}_${size}`;
+
     setCart((prevCart) => {
-      const cartId = `${product._id}_${image}`;
       const existing = prevCart.find((item) => item.cartId === cartId);
       if (existing) {
         return prevCart.map((item) =>
@@ -42,6 +45,7 @@ export function CartProvider({ children }) {
           image,
           description: product.description,
           quantity: 1,
+          size,
         },
       ];
     });

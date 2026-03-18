@@ -125,6 +125,9 @@ export default function CartPage() {
                       <p className="text-sm text-gray-500 mt-1 truncate">
                         {item.description || "Stylish, durable & versatile"}
                       </p>
+                      {item.size && (
+                        <p className="text-xs text-gray-600 mt-1">Selected size: {item.size}</p>
+                      )}
                     </div>
 
                     <div className="text-right">

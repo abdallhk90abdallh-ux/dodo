@@ -3,6 +3,7 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
 import User from "@/lib/models/User";
+import Product from "@/lib/models/Product";
 import { sendEmail } from "@/lib/sendEmail";
 
 export async function POST(req) {
@@ -29,6 +30,66 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Cart is empty" }), {
         status: 400,
       });
+
+    // Check size availability and decrement stock per item
+    for (const item of items) {
+      if (!item.productId || !item.quantity || item.quantity <= 0) continue;
+
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return new Response(JSON.stringify({ error: `Product ${item.productId} not found` }), { status: 404 });
+      }
+
+      const rawSize = item.size || "";
+      const selectedSize = String(rawSize).trim();
+      if (product.requiresSize && !selectedSize) {
+        return new Response(
+          JSON.stringify({ error: `Size is required for ${product.name}.` }),
+          { status: 400 }
+        );
+      }
+
+      if (selectedSize) {
+        const currentStock = (() => {
+          if (!product.sizes) return null;
+          if (typeof product.sizes.get === "function") {
+            const v = product.sizes.get(selectedSize);
+            return v != null ? Number(v) : null;
+          }
+          // fallback plain object
+          const v = product.sizes[selectedSize] ?? product.sizes[String(Number(selectedSize))];
+          return v != null ? Number(v) : null;
+        })();
+
+        if (currentStock === null) {
+          return new Response(
+            JSON.stringify({ error: `Selected size ${selectedSize} not available for ${product.name}.` }),
+            { status: 400 }
+          );
+        }
+
+        if (currentStock < item.quantity) {
+          return new Response(
+            JSON.stringify({ error: `Not enough stock for ${product.name} size ${selectedSize}` }),
+            { status: 400 }
+          );
+        }
+
+        if (typeof product.sizes.set === "function") {
+          product.sizes.set(selectedSize, currentStock - item.quantity);
+          if (product.sizes.get(selectedSize) <= 0) {
+            product.sizes.delete(selectedSize);
+          }
+        } else {
+          product.sizes[selectedSize] = currentStock - item.quantity;
+          if (product.sizes[selectedSize] <= 0) {
+            delete product.sizes[selectedSize];
+          }
+        }
+
+        await product.save();
+      }
+    }
 
     const newOrder = await Order.create({
       user: user._id,
@@ -61,7 +122,7 @@ export async function POST(req) {
           ${populatedOrder.items
             .map(
               (item) =>
-                `<li>${item.name} — ${item.quantity} × ${item.price} EGP</li>`
+                `<li>${item.name} ${item.size ? ` (size ${item.size})` : ""} — ${item.quantity} × ${item.price} EGP</li>`
             )
             .join("")}
         </ul>
