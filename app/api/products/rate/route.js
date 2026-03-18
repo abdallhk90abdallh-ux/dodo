@@ -19,16 +19,19 @@ export async function POST(req) {
     await dbConnect();
 
     // Verify the user actually ordered this product at least once
-    const hasOrdered = await Order.findOne({
-      user: session.user.id,
-      "items.productId": productId,
-    });
-
-    if (!hasOrdered) {
-      return new Response(JSON.stringify({ error: "You can only rate products you purchased" }), { status: 403 });
-    }
-
     const product = await Product.findById(productId);
+    if (!product) return new Response(JSON.stringify({ error: "Product not found" }), { status: 404 });
+
+    if (!product.isTesting) {
+      const hasOrdered = await Order.findOne({
+        user: session.user.id,
+        "items.productId": productId,
+      });
+
+      if (!hasOrdered) {
+        return new Response(JSON.stringify({ error: "You can only rate products you purchased" }), { status: 403 });
+      }
+    }
     if (!product) return new Response(JSON.stringify({ error: "Product not found" }), { status: 404 });
 
     // Check if user already reviewed

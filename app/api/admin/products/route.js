@@ -14,14 +14,44 @@ export async function POST(req) {
   }
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
     await dbConnect();
-    const products = await Product.find({});
+    const { searchParams } = new URL(req.url);
+    const mode = searchParams.get("mode") || "all";
+    let filter = {};
+
+    if (mode === "testing") {
+      filter = { isTesting: true };
+    } else if (mode === "published") {
+      filter = { isPublished: true, isTesting: false };
+    } else if (mode === "hidden") {
+      filter = { isPublished: false, isTesting: false };
+    } else {
+      filter = {};
+    }
+
+    const products = await Product.find(filter).sort({ createdAt: -1 });
     return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json({ message: "Error fetching products" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req) {
+  try {
+    await dbConnect();
+    const { id, updates } = await req.json();
+    if (!id || !updates) {
+      return NextResponse.json({ message: "Missing id or updates" }, { status: 400 });
+    }
+    const product = await Product.findByIdAndUpdate(id, updates, { new: true });
+    if (!product) return NextResponse.json({ message: "Product not found" }, { status: 404 });
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Error patching product:", error);
+    return NextResponse.json({ message: "Error patching product" }, { status: 500 });
   }
 }
 

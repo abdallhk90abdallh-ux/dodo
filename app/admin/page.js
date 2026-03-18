@@ -84,6 +84,7 @@ export default function AdminPage() {
 function ProductsAdmin() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [mode, setMode] = useState("published");
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
@@ -91,15 +92,21 @@ function ProductsAdmin() {
     imagesInput: "",
     description: "",
     category: "",
+    isTesting: true,
+    productCounter: 0,
+    voteCount: 0,
   });
 
   useEffect(() => {
     fetchProducts();
+  }, [mode]);
+
+  useEffect(() => {
     fetchCategories();
   }, []);
 
   async function fetchProducts() {
-    const res = await fetch("/api/admin/products");
+    const res = await fetch(`/api/admin/products?mode=${mode}`);
     const data = await res.json();
     setProducts(data);
   }
@@ -129,6 +136,10 @@ function ProductsAdmin() {
       image: images[0] || "",
       description: newProduct.description,
       category: newProduct.category,
+      isTesting: newProduct.isTesting,
+      isPublished: newProduct.isTesting ? false : true,
+      voteCount: Number(newProduct.voteCount || 0),
+      productCounter: Number(newProduct.productCounter || 0),
     };
 
     const res = await fetch("/api/admin/products", {
@@ -143,11 +154,25 @@ function ProductsAdmin() {
         imagesInput: "",
         description: "",
         category: "",
+        isTesting: true,
+        productCounter: 0,
+        voteCount: 0,
       });
       fetchProducts();
     } else {
       alert("Failed to add product");
     }
+  }
+
+  async function chooseWinner(productId) {
+    if (!confirm("Promote this product as winner and move to main page?")) return;
+    const res = await fetch("/api/admin/products/winner", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
+    });
+    if (res.ok) fetchProducts();
+    else alert("Failed to choose winner");
   }
 
   async function handleDeleteProduct(id) {
@@ -161,7 +186,29 @@ function ProductsAdmin() {
 
   return (
     <div className="space-y-10">
-      <h2 className="text-2xl font-semibold">📦 Manage Products</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">📦 Manage Products</h2>
+        <div className="flex gap-2">
+          {[
+            { key: "published", label: "Published" },
+            { key: "testing", label: "Testing Pool" },
+            { key: "all", label: "All" },
+          ].map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setMode(item.key)}
+              className={`px-3 py-1 rounded-lg border ${
+                mode === item.key
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <form
   onSubmit={handleAddProduct}
@@ -218,6 +265,32 @@ function ProductsAdmin() {
     className="border p-2 rounded"
   />
 
+  <input
+    type="number"
+    placeholder="Initial votes (0)"
+    value={newProduct.voteCount}
+    onChange={(e) => setNewProduct({ ...newProduct, voteCount: Number(e.target.value) })}
+    className="border p-2 rounded"
+  />
+
+  <input
+    type="number"
+    placeholder="Product counter"
+    value={newProduct.productCounter}
+    onChange={(e) => setNewProduct({ ...newProduct, productCounter: Number(e.target.value) })}
+    className="border p-2 rounded"
+  />
+
+  <label className="flex items-center gap-2 mt-2">
+    <input
+      type="checkbox"
+      checked={newProduct.isTesting}
+      onChange={(e) => setNewProduct({ ...newProduct, isTesting: e.target.checked })}
+      className="w-4 h-4"
+    />
+    <span className="text-sm">Add this product to testing pool</span>
+  </label>
+
   <button
     type="submit"
     className="col-span-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
@@ -241,9 +314,26 @@ function ProductsAdmin() {
             <p className="text-gray-500">${product.price}</p>
             <p className="text-sm text-blue-600 font-medium capitalize">{product.category}</p>
             <p className="text-sm text-gray-400">{product.description}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Status: {product.isTesting ? "Testing" : product.isPublished ? "Published" : "Hidden"}
+            </p>
+            <p className="text-xs text-gray-500">
+              Votes: {product.voteCount || 0} | Avg: {product.avgRating || 0}
+            </p>
+            <p className="text-xs text-gray-500">Counter: {product.productCounter || 0}</p>
+
+            {product.isTesting && (
+              <button
+                onClick={() => chooseWinner(product._id)}
+                className="mt-3 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+              >
+                🏆 Choose Winner
+              </button>
+            )}
+
             <button
               onClick={() => handleDeleteProduct(product._id)}
-              className="mt-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+              className="mt-3 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
             >
               🗑️ Delete
             </button>

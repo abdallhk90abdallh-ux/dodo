@@ -2,9 +2,17 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import Product from "@/lib/models/Product";
 
-export async function GET() {
+export async function GET(req) {
   await dbConnect();
-  const products = await Product.find();
+  const { searchParams } = new URL(req.url);
+  const testing = searchParams.get("testing");
+
+  let filter = { isPublished: true };
+  if (testing === "true") {
+    filter = { isTesting: true };
+  }
+
+  const products = await Product.find(filter);
   return NextResponse.json(products);
 }
 
