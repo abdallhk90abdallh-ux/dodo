@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/lib/models/User";
+import bcrypt from "bcryptjs";
 
 export async function PUT(req) {
   await dbConnect();
@@ -12,13 +13,40 @@ export async function PUT(req) {
     return new Response(JSON.stringify({ error: "Not authenticated" }), { status: 401 });
   }
 
-  const { phone, address } = await req.json();
+  const { phone, address, currentPassword, newPassword } = await req.json();
+
+  const updateData = { phone, address };
+
+  if (newPassword) {
+    if (!currentPassword) {
+      return new Response(JSON.stringify({ error: "Current password is required to change password" }), { status: 400 });
+    }
+
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
+    }
+
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validPassword) {
+      return new Response(JSON.stringify({ error: "Current password is incorrect" }), { status: 400 });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    updateData.password = hashedPassword;
+  }
 
   const updatedUser = await User.findOneAndUpdate(
     { email: session.user.email },
-    { phone, address },
-    { new: true } // ← return the updated document
+    updateData,
+    { new: true }
   );
 
-  return new Response(JSON.stringify(updatedUser), { status: 200 });
+  // remove password from response
+  if (updatedUser) {
+    const { password, ...safeUser } = updatedUser.toObject();
+    return new Response(JSON.stringify(safeUser), { status: 200 });
+  }
+
+  return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 });
 }

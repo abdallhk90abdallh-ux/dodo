@@ -31,8 +31,8 @@ export default function TestProductsPage() {
     const rating = ratingState[productId];
     const comment = commentState[productId];
 
-    if (!rating || rating < 1 || rating > 5) {
-      setMessage("Please select a rating between 1 and 5.");
+    if (rating !== 1 && rating !== -1) {
+      setMessage("Please choose Like or Dislike.");
       return;
     }
 
@@ -57,7 +57,7 @@ export default function TestProductsPage() {
     <div className="min-h-screen p-10 bg-gray-50">
       <h1 className="text-3xl font-bold text-center mb-6">🧪 Test Products Voting</h1>
       <p className="text-gray-600 text-center mb-6">
-        Four products are currently in the voting pool. Vote 1-5 for each and leave feedback. Top-rated becomes featured.
+        Four products are currently in the voting pool. Choose Like or Dislike for each and leave feedback. Top-rated becomes featured.
       </p>
 
       {message && <div className="mb-4 text-sm text-red-600">{message}</div>}
@@ -65,51 +65,35 @@ export default function TestProductsPage() {
       <div className="grid md:grid-cols-2 gap-6">
         {products.map((product) => (
           <div key={product._id} className="bg-white rounded-xl shadow p-5">
-            <img
-              src={product.images?.[0] || product.image || "/bag-placeholder.jpg"}
-              alt={product.name}
-              className="w-full h-48 object-cover rounded-lg mb-4"
-            />
+            <div className="w-full h-64 bg-gray-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+              <img
+                src={product.images?.[0] || product.image || "/bag-placeholder.jpg"}
+                alt={product.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
             <h3 className="text-xl font-semibold">{product.name}</h3>
             <p className="text-gray-600">{product.category}</p>
             <p className="my-2 text-gray-700">{product.description}</p>
             <p className="text-sm text-gray-500">Current avg rating: {product.avgRating || 0} ({product.ratingsCount || 0} votes)</p>
 
-            {product.sizes && Object.keys(product.sizes || {}).length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mt-3">
-                {Object.entries(product.sizes || {}).map(([size, qty]) => (
-                  <div key={size} className={`border p-2 rounded text-center text-xs ${qty > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-400"}`}>
-                    {size}
-                    <div className="text-[10px]">{qty} left</div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="flex items-center gap-2 mt-3">
-              <label className="text-sm">Your rating:</label>
-              <select
-                value={ratingState[product._id] || ""}
-                onChange={(e) =>
-                  setRatingState((prev) => ({ ...prev, [product._id]: Number(e.target.value) }))
-                }
-                className="border rounded px-2 py-1"
+              <span className="text-sm">Your vote:</span>
+              <button
+                onClick={() => setRatingState((prev) => ({ ...prev, [product._id]: 1 }))}
+                className={`px-3 py-1 rounded border ${ratingState[product._id] === 1 ? "bg-green-100 border-green-500" : "bg-white border-gray-300"}`}
               >
-                <option value="">Select</option>
-                {[1, 2, 3, 4, 5].map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+                👍 Like
+              </button>
+              <button
+                onClick={() => setRatingState((prev) => ({ ...prev, [product._id]: -1 }))}
+                className={`px-3 py-1 rounded border ${ratingState[product._id] === -1 ? "bg-red-100 border-red-500" : "bg-white border-gray-300"}`}
+              >
+                👎 Dislike
+              </button>
             </div>
-
-            <textarea
-              placeholder="Optional comment"
-              value={commentState[product._id] || ""}
-              onChange={(e) => setCommentState((prev) => ({ ...prev, [product._id]: e.target.value }))}
-              className="w-full border rounded p-2 mt-3"
-            />
+            <p className="text-xs text-gray-500 mt-1">Selected: {ratingState[product._id] === 1 ? "Like" : ratingState[product._id] === -1 ? "Dislike" : "None"}</p>
 
             <button
               onClick={() => submitRating(product._id)}

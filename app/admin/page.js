@@ -414,6 +414,9 @@ function SettingsAdmin() {
     heroImageEnabled: false,
     heroImageWidth: 224,
     heroImageHeight: 0,
+    backgroundColor: "#ffffff",
+    backgroundImage: "",
+    backgroundImageEnabled: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

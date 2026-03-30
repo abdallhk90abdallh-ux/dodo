@@ -11,9 +11,26 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
-    const { productId, rating, comment } = await req.json();
-    if (!productId || !rating) {
+    const { productId, rating: ratingRaw, comment } = await req.json();
+    if (!productId || ratingRaw === undefined || ratingRaw === null) {
       return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
+    }
+
+    let rating = ratingRaw;
+    if (typeof rating === "string") {
+      const value = rating.trim().toLowerCase();
+      if (value === "like") rating = 1;
+      else if (value === "dislike") rating = -1;
+      else rating = Number(value);
+    }
+
+    if (typeof rating !== "number" || Number.isNaN(rating)) {
+      return new Response(JSON.stringify({ error: "Invalid rating" }), { status: 400 });
+    }
+
+    const allowed = [1, 2, 3, 4, 5, -1];
+    if (!allowed.includes(rating)) {
+      return new Response(JSON.stringify({ error: "Rating must be like/dislike or 1-5" }), { status: 400 });
     }
 
     await dbConnect();
@@ -32,7 +49,6 @@ export async function POST(req) {
         return new Response(JSON.stringify({ error: "You can only rate products you purchased" }), { status: 403 });
       }
     }
-    if (!product) return new Response(JSON.stringify({ error: "Product not found" }), { status: 404 });
 
     // Check if user already reviewed
     const existing = product.reviews?.find((r) => String(r.user) === String(session.user.id));
@@ -45,11 +61,23 @@ export async function POST(req) {
     }
 
     // Recalculate avgRating and ratingsCount
-    const ratings = product.reviews.map((r) => r.rating || 0);
-    const ratingsCount = ratings.length;
-    const avg = ratingsCount ? ratings.reduce((a, b) => a + b, 0) / ratingsCount : 0;
-    product.avgRating = Math.round((avg + Number.EPSILON) * 10) / 10; // one decimal
-    product.ratingsCount = ratingsCount;
+    const ratingsCount = (product.reviews || []).length;
+    if (ratingsCount === 0) {
+      product.avgRating = 0;
+      product.ratingsCount = 0;
+    } else {
+      const isBinaryLikes = product.reviews.every((r) => r.rating === 1 || r.rating === -1);
+      if (isBinaryLikes) {
+        const likeCount = product.reviews.filter((r) => r.rating === 1).length;
+        const percentLike = (likeCount / ratingsCount) * 100;
+        product.avgRating = Math.round((percentLike + Number.EPSILON) * 10) / 10;
+      } else {
+        const ratings = product.reviews.map((r) => r.rating || 0);
+        const avg = ratings.reduce((a, b) => a + b, 0) / ratingsCount;
+        product.avgRating = Math.round((avg + Number.EPSILON) * 10) / 10;
+      }
+      product.ratingsCount = ratingsCount;
+    }
 
     await product.save();
 
