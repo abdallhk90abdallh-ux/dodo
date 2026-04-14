@@ -1,6 +1,11 @@
 "use client";
 import { SessionProvider } from "next-auth/react";
+import { MusicProvider } from "@/context/MusicContext";
 
 export default function Providers({ children }) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return (
+    <SessionProvider>
+      <MusicProvider>{children}</MusicProvider>
+    </SessionProvider>
+  );
 }

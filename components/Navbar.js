@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Home, ShoppingBag, ShoppingCart, User, LogIn, LogOut, Shield } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import MusicPlayer from "@/components/MusicPlayer";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -91,6 +92,11 @@ export default function Navbar() {
                 <LogOut size={18} />
                 <span className="font-medium">Logout</span>
               </button>
+
+              {/* Music Player */}
+              <div className="border-l border-white/20 pl-4">
+                <MusicPlayer />
+              </div>
             </>
           ) : (
             <>
@@ -108,6 +114,11 @@ export default function Navbar() {
                 <User size={18} />
                 <span className="font-medium">Sign Up</span>
               </Link>
+
+              {/* Music Player */}
+              <div className="border-l border-white/20 pl-4">
+                <MusicPlayer />
+              </div>
             </>
           )}
         </div>

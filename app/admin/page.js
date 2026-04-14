@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import MusicAdmin from "@/components/MusicAdmin";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -63,7 +64,19 @@ export default function AdminPage() {
           >
             Settings
           </button>
-        </nav>
+          <button
+            onClick={() => setActiveTab("music")}
+            className={`text-left px-4 py-2 rounded-lg transition ${
+              activeTab === "music"
+                ? "bg-blue-600 text-white"
+                : "hover:bg-blue-100"
+            }`}
+          >
+            Music Manager 🎵
+          </button>
+        </naactiveTab === "music" ? (
+          <MusicAdmin />
+        ) : v>
       </aside>
 
       <main className="flex-1 p-8 bg-white/60 backdrop-blur-md">
