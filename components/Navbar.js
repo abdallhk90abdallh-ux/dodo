@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Home, ShoppingBag, ShoppingCart, User, LogIn, LogOut, Shield } from "lucide-react";
+import { Home, ShoppingBag, ShoppingCart, User, LogIn, LogOut, Shield, HelpCircle, Database } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import MusicPlayer from "@/components/MusicPlayer";
 
@@ -31,6 +31,16 @@ export default function Navbar() {
       href: "/admin",
       label: "Admin",
       icon: <Shield size={18} />,
+    });
+    links.push({
+      href: "/admin/explorer",
+      label: "Explorer",
+      icon: <Database size={18} />,
+    });
+    links.push({
+      href: "/admin/help",
+      label: "Help",
+      icon: <HelpCircle size={18} />,
     });
   }
 
