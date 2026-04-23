@@ -1,27 +1,25 @@
-/**
- * mongodbExample.js
- * 
- * A minimal, runnable example for MongoDB Atlas with Mongoose.
- * 
- * This demonstrates:
- * - Loading MongoDB URI from environment variables
- * - Connecting to MongoDB Atlas
- * - Inserting sample documents with timestamps
- * - Querying documents by most recent timestamp
- * - Querying a document by ID
- * - Proper connection cleanup
- * 
- * Before running:
- * 1. Create a .env.local file in the project root with:
- *    MONGODB_URI=mongodb+srv://abdallhk90abdallh_db_user:<413277>@cluster0.vfkwjqj.mongodb.net/?appName=Cluster0
- * 
- * 2. Run: npm install dotenv mongoose
- * 
- * 3. Run: node mongodbExample.js
- */
 
 require("dotenv").config({ path: ".env.local" });
 const mongoose = require("mongoose");
+
+// ============================================================================
+// QUICK CONNECTION TEST
+// ============================================================================
+
+// Test basic connection with server validation
+async function testConnection() {
+  const uri = process.env.MONGODB_URI;
+  const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
+
+  try {
+    await mongoose.connect(uri, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log("✅ Pinged your deployment. Connection successful!");
+    await mongoose.disconnect();
+  } catch (error) {
+    console.error("❌ Connection test failed:", error.message);
+  }
+}
 
 // ============================================================================
 // CONFIGURATION
