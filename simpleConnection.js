@@ -1,17 +1,21 @@
-const mongoose = require('mongoose');
-const uri = "mongodb+srv://abdallhk90abdallh_db_user:<413277>@cluster0.eaddiwq.mongodb.net/?appName=Cluster0";
+const mongoose = require("mongoose");
 
-const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
+const uri = "mongodb+srv://abdallhk90abdallh_db_user:413277@cluster0.eaddiwq.mongodb.net/test?retryWrites=true&w=majority";
 
 async function run() {
   try {
-    // Create a Mongoose client with a MongoClientOptions object to set the Stable API version
-    await mongoose.connect(uri, clientOptions);
+    await mongoose.connect(uri);
+
+    console.log("✅ Connected to MongoDB");
+
     await mongoose.connection.db.admin().command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log("✅ Ping success");
+    
+  } catch (err) {
+    console.error("❌ Error:", err);
   } finally {
-    // Ensures that the client will close when you finish/error
     await mongoose.disconnect();
   }
 }
-run().catch(console.dir);
+
+run();
