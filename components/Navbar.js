@@ -68,10 +68,9 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 
-                  ${
-                    isActive
-                      ? "text-black bg-white shadow-md scale-105"
-                      : "text-gray-200 hover:text-white hover:bg-white/10"
+                  ${isActive
+                    ? "text-black bg-white shadow-md scale-105"
+                    : "text-gray-200 hover:text-white hover:bg-white/10"
                   }`}
               >
                 {link.icon}
@@ -85,11 +84,10 @@ export default function Navbar() {
             <>
               <Link
                 href="/profile"
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${
-                  pathname === "/profile"
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${pathname === "/profile"
                     ? "text-black bg-white shadow-md scale-105"
                     : "text-gray-200 hover:text-white hover:bg-white/10"
-                }`}
+                  }`}
               >
                 <User size={18} />
                 <span className="font-medium">{session.user.name || "Profile"}</span>

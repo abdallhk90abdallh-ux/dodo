@@ -2,10 +2,22 @@
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 
+function hasStock(product) {
+  if (!product) return false;
+  if (product.sizes) {
+    const sizes = typeof product.sizes.get === "function"
+      ? Object.fromEntries(product.sizes)
+      : product.sizes;
+    return Object.values(sizes).some((qty) => Number(qty) > 0);
+  }
+  return true;
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [category, setCategory] = useState("all");
+  const [subcategory, setSubcategory] = useState("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -13,26 +25,37 @@ export default function ProductsPage() {
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
-        setFiltered(data);
+        setFiltered(data.filter(hasStock));
       });
   }, []);
 
-  function handleCategoryChange(cat) {
-    setCategory(cat);
-    const q = search.trim().toLowerCase();
-    let results = products;
-    if (cat !== "all") results = results.filter((p) => p.category === cat);
+  function applyFilters(categoryValue, subcategoryValue, searchValue) {
+    const q = searchValue.trim().toLowerCase();
+    let results = products.filter(hasStock);
+    if (categoryValue !== "all") results = results.filter((p) => p.category === categoryValue);
+    if (subcategoryValue !== "all") results = results.filter((p) => p.subcategory === subcategoryValue);
     if (q) results = results.filter((p) => p.name.toLowerCase().includes(q));
     setFiltered(results);
   }
 
-  const [categories, setCategories] = useState(["all"]);
+  function handleCategoryChange(cat) {
+    setCategory(cat);
+    setSubcategory("all");
+    applyFilters(cat, "all", search);
+  }
+
+  function handleSubcategoryChange(sub) {
+    setSubcategory(sub);
+    applyFilters(category, sub, search);
+  }
+
+  const [categories, setCategories] = useState([{ name: "all", subcategories: [] }]);
 
   useEffect(() => {
     fetch("/api/categories")
       .then((res) => res.json())
-      .then((data) => setCategories(["all", ...data.map((c) => c.name)]))
-      .catch(() => {});
+      .then((data) => setCategories([{ name: "all", subcategories: [] }, ...data]))
+      .catch(() => { });
   }, []);
 
   return (
@@ -54,12 +77,9 @@ export default function ProductsPage() {
             type="search"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              const q = e.target.value.trim().toLowerCase();
-              let results = products;
-              if (category !== "all") results = results.filter((p) => p.category === category);
-              if (q) results = results.filter((p) => p.name.toLowerCase().includes(q));
-              setFiltered(results);
+              const value = e.target.value;
+              setSearch(value);
+              applyFilters(category, subcategory, value);
             }}
             placeholder="Search products by name..."
             className="max-w-xl w-full bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-4 py-2 text-sm placeholder-gray-200"
@@ -69,18 +89,44 @@ export default function ProductsPage() {
         <div className="flex flex-wrap justify-center gap-3">
           {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
+              key={cat.name}
+              onClick={() => handleCategoryChange(cat.name)}
               className={`px-6 py-2.5 rounded-full border-2 transition-all duration-300 text-sm font-medium
-                ${
-                  category === cat
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-700 hover:border-black border-gray-200"
+                ${category === cat.name
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-700 hover:border-black border-gray-200"
                 }`}>
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
             </button>
           ))}
         </div>
+        {category !== "all" && categories.find((cat) => cat.name === category)?.subcategories?.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-3 mt-4">
+            <button
+              type="button"
+              onClick={() => handleSubcategoryChange("all")}
+              className={`px-5 py-2 rounded-full border-2 transition-all duration-300 text-sm font-medium
+                ${subcategory === "all"
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 hover:border-blue-600 border-gray-200"
+                }`}>
+              All
+            </button>
+            {categories.find((cat) => cat.name === category)?.subcategories.map((sub) => (
+              <button
+                key={sub}
+                type="button"
+                onClick={() => handleSubcategoryChange(sub)}
+                className={`px-5 py-2 rounded-full border-2 transition-all duration-300 text-sm font-medium
+                  ${subcategory === sub
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 hover:border-blue-600 border-gray-200"
+                  }`}>
+                {sub.charAt(0).toUpperCase() + sub.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Products Grid */}

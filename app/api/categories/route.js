@@ -10,7 +10,7 @@ export async function GET() {
     // Auto-seed default categories if none exist
     if (!cats || cats.length === 0) {
       const defaults = ["man", "woman", "sport", "kids"];
-      const docs = defaults.map((n) => ({ name: n }));
+      const docs = defaults.map((n) => ({ name: n, subcategories: [] }));
       try {
         await Category.insertMany(docs, { ordered: false });
       } catch (err) {
@@ -33,7 +33,7 @@ export async function POST(req) {
     if (!name) return NextResponse.json({ message: "Missing name" }, { status: 400 });
     const exists = await Category.findOne({ name });
     if (exists) return NextResponse.json({ message: "Category exists" }, { status: 400 });
-    const cat = await Category.create({ name });
+    const cat = await Category.create({ name, subcategories: [] });
     return NextResponse.json(cat, { status: 201 });
   } catch (error) {
     console.error(error);
@@ -44,9 +44,16 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     await dbConnect();
-    const { id, name } = await req.json();
-    if (!id || !name) return NextResponse.json({ message: "Missing id or name" }, { status: 400 });
-    const cat = await Category.findByIdAndUpdate(id, { name }, { new: true });
+    const { id, name, subcategories } = await req.json();
+    if (!id || (!name && !Array.isArray(subcategories))) {
+      return NextResponse.json({ message: "Missing id or updates" }, { status: 400 });
+    }
+
+    const updates = {};
+    if (name) updates.name = name;
+    if (Array.isArray(subcategories)) updates.subcategories = subcategories;
+
+    const cat = await Category.findByIdAndUpdate(id, updates, { new: true });
     return NextResponse.json(cat);
   } catch (error) {
     console.error(error);

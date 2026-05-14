@@ -120,11 +120,11 @@ export async function POST(req) {
         <h3>Items:</h3>
         <ul>
           ${populatedOrder.items
-            .map(
-              (item) =>
-                `<li>${item.name} ${item.size ? ` (size ${item.size})` : ""} — ${item.quantity} × ${item.price} EGP</li>`
-            )
-            .join("")}
+          .map(
+            (item) =>
+              `<li>${item.name} ${item.size ? ` (size ${item.size})` : ""} — ${item.quantity} × ${item.price} EGP</li>`
+          )
+          .join("")}
         </ul>
       `,
     });
