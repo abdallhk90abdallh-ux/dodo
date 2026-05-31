@@ -2,6 +2,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaWhatsapp,
+} from "react-icons/fa";
 
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
@@ -14,17 +20,16 @@ export default function HomePage() {
   const [heroImageWidth, setHeroImageWidth] = useState(224);
   const [heroImageHeight, setHeroImageHeight] = useState(0);
 
-  // Fetch products and featured + site settings
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        // Randomly select 4 featured products or just take the first 4
         setFeatured(data.slice(0, 4));
       })
-      .catch((err) => console.error("Failed to load featured products:", err));
+      .catch((err) =>
+        console.error("Failed to load featured products:", err)
+      );
 
-    // fetch site settings
     fetch("/api/settings")
       .then((res) => res.json())
       .then((s) => {
@@ -47,36 +52,88 @@ export default function HomePage() {
         {/* Left Content */}
         <div className="lg:w-1/2 space-y-6 text-center lg:text-left mb-10 lg:mb-0">
           <h1 className="text-4xl lg:text-6xl font-bold text-gray-900">
-            {heroTitle.split(" ")[0]} <span className="text-blue-600">{heroTitle.split(" ").slice(1).join(" ")}</span>
+            {heroTitle.split(" ")[0]}{" "}
+            <span className="text-blue-600">
+              {heroTitle.split(" ").slice(1).join(" ")}
+            </span>
           </h1>
-          {/* Optional hero image (admin-controlled) */}
+
+          {/* Optional Hero Image */}
           {heroImageEnabled && heroImage ? (
             <img
               src={heroImage}
               alt="Hero"
-              style={{ width: heroImageWidth ? `${heroImageWidth}px` : undefined, height: heroImageHeight ? `${heroImageHeight}px` : 'auto', maxWidth: '100%' }}
+              style={{
+                width: heroImageWidth
+                  ? `${heroImageWidth}px`
+                  : undefined,
+                height: heroImageHeight
+                  ? `${heroImageHeight}px`
+                  : "auto",
+                maxWidth: "100%",
+              }}
               className="object-cover rounded-lg mx-auto my-4 shadow-md"
             />
           ) : null}
 
-          <p className="text-lg tex t-gray-600 max-w-xl">
+          <p className="text-lg text-gray-600 max-w-xl">
             {heroSubtitle}
           </p>
+
+          {/* Buttons */}
           <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
             <Link
               href="/shop"
-              className="px-8 py-3 bg-blue-600 text-white rounded-full font-medium 
-                hover:bg-blue-700 transition-colors duration-300"
+              className="px-8 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-300"
             >
               Shop Now
             </Link>
+
             <Link
               href="/shop"
-              className="px-8 py-3 border-2 border-gray-900 text-gray-900 rounded-full font-medium 
-                hover:bg-gray-900 hover:text-white transition-colors duration-300"
+              className="px-8 py-3 border-2 border-gray-900 text-gray-900 rounded-full font-medium hover:bg-gray-900 hover:text-white transition-colors duration-300"
             >
               Learn More
             </Link>
+          </div>
+
+          {/* Social Media Links */}
+          <div className="flex gap-6 justify-center lg:justify-start pt-2">
+            <a
+              href="https://www.facebook.com/share/1EnDCrZDMy/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-blue-600 transition-all duration-300 text-3xl hover:scale-110"
+            >
+              <FaFacebook />
+            </a>
+
+            <a
+              href="https://www.instagram.com/dodo79611dodo?igsh=ejRnb2QyZXlleWo="
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-pink-600 transition-all duration-300 text-3xl hover:scale-110"
+            >
+              <FaInstagram />
+            </a>
+
+            <a
+              href="https://www.linkedin.com/in/abdallah-ayman-0a8233335?utm_source=share_via&utm_content=profile&utm_medium=member_android"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-blue-700 transition-all duration-300 text-3xl hover:scale-110"
+            >
+              <FaLinkedin />
+            </a>
+
+            <a
+              href="https://wa.me/message/HRIPYHYIE6YVP1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-green-600 transition-all duration-300 text-3xl hover:scale-110"
+            >
+              <FaWhatsapp />
+            </a>
           </div>
         </div>
 
@@ -89,18 +146,23 @@ export default function HomePage() {
                 className="relative h-48 lg:h-64 rounded-2xl overflow-hidden group"
               >
                 <img
-                  src={product.images?.[0] || product.image || "/bag-placeholder.jpg"}
+                  src={
+                    product.images?.[0] ||
+                    product.image ||
+                    "/bag-placeholder.jpg"
+                  }
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
+
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition" />
+
                 <p className="absolute bottom-3 left-3 text-white text-sm font-semibold drop-shadow">
                   {product.name}
                 </p>
               </div>
             ))
           ) : (
-            // Skeleton loading placeholders
             Array(4)
               .fill()
               .map((_, i) => (
