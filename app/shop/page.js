@@ -8,7 +8,11 @@ function hasStock(product) {
     const sizes = typeof product.sizes.get === "function"
       ? Object.fromEntries(product.sizes)
       : product.sizes;
-    return Object.values(sizes).some((qty) => Number(qty) > 0);
+
+    const quantities = Object.values(sizes);
+    // If sizes object exists but is empty, assume it's a simple product and show it
+    if (quantities.length === 0) return true;
+    return quantities.some((qty) => Number(qty) > 0);
   }
   return true;
 }
@@ -24,6 +28,7 @@ export default function ProductsPage() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
+        console.log("Fetched products:", data); // Debugging: Check if products are arriving
         setProducts(data);
         setFiltered(data.filter(hasStock));
       });
