@@ -13,6 +13,11 @@ export default function CartPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  const total = cart.reduce(
+    (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
+    0
+  );
+
   const handleCheckout = async () => {
     if (!session) {
       alert("Please log in to proceed to checkout");
@@ -38,7 +43,7 @@ export default function CartPage() {
         router.push("/orders");
       } else {
         const err = await res.json();
-        alert(`❌ ${err.error}`);
+        alert(`❌ ${err.error}${err.details ? `: ${err.details}` : ""}`);
       }
     } catch (error) {
       console.error("Checkout failed:", error);
@@ -84,11 +89,6 @@ export default function CartPage() {
       </div>
     );
   }
-
-  const total = cart.reduce(
-    (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-    0
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 rounded-2xl">

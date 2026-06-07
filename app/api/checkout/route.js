@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
@@ -24,12 +24,21 @@ export async function POST(req) {
       });
     }
 
-    const { items, total } = await req.json();
+    const body = await req.json();
+    const items = Array.isArray(body?.items) ? body.items : [];
+    const total = Number(body?.total);
 
-    if (!items?.length)
+    if (!items.length) {
       return new Response(JSON.stringify({ error: "Cart is empty" }), {
         status: 400,
       });
+    }
+
+    if (Number.isNaN(total) || total < 0) {
+      return new Response(JSON.stringify({ error: "Invalid total amount" }), {
+        status: 400,
+      });
+    }
 
     // Check size availability and decrement stock per item
     for (const item of items) {
@@ -103,37 +112,49 @@ export async function POST(req) {
     // ✅ Populate the user field (to access name/email)
     const populatedOrder = await newOrder.populate("user", "name email");
 
-    // ✅ Send admin notification with user info
-    await sendEmail({
-      to: process.env.ADMIN_EMAIL,
-      subject: `🛍️ New Order Received - ${populatedOrder._id}`,
-      html: `
-        <h2>New Order Received</h2>
-        <p><strong>Order ID:</strong> ${populatedOrder._id}</p>
-        <p><strong>User:</strong> ${populatedOrder.user?.name || "N/A"}</p>
-        <p><strong>Email:</strong> ${populatedOrder.user?.email || "N/A"}</p>
-        <p><strong>Status:</strong> ${populatedOrder.status}</p>
-        <p><strong>Total:</strong> ${populatedOrder.total || 0} EGP</p>
-        <p><strong>Address:</strong> ${populatedOrder.address}</p>
-        <p><strong>Phone:</strong> ${populatedOrder.phone}</p>
-        <hr />
-        <h3>Items:</h3>
-        <ul>
-          ${populatedOrder.items
-          .map(
-            (item) =>
-              `<li>${item.name} ${item.size ? ` (size ${item.size})` : ""} — ${item.quantity} × ${item.price} EGP</li>`
-          )
-          .join("")}
-        </ul>
-      `,
-    });
+    // ✅ Send admin notification with user info if configured.
+    if (process.env.ADMIN_EMAIL) {
+      try {
+        await sendEmail({
+          to: process.env.ADMIN_EMAIL,
+          subject: `🛍️ New Order Received - ${populatedOrder._id}`,
+          html: `
+            <h2>New Order Received</h2>
+            <p><strong>Order ID:</strong> ${populatedOrder._id}</p>
+            <p><strong>User:</strong> ${populatedOrder.user?.name || "N/A"}</p>
+            <p><strong>Email:</strong> ${populatedOrder.user?.email || "N/A"}</p>
+            <p><strong>Status:</strong> ${populatedOrder.status}</p>
+            <p><strong>Total:</strong> ${populatedOrder.total || 0} EGP</p>
+            <p><strong>Address:</strong> ${populatedOrder.address}</p>
+            <p><strong>Phone:</strong> ${populatedOrder.phone}</p>
+            <hr />
+            <h3>Items:</h3>
+            <ul>
+              ${populatedOrder.items
+              .map(
+                (item) =>
+                  `<li>${item.name} ${item.size ? ` (size ${item.size})` : ""} — ${item.quantity} × ${item.price} EGP</li>`
+              )
+              .join("")}
+            </ul>
+          `,
+        });
+      } catch (emailError) {
+        console.error("Order created but email notification failed:", emailError);
+      }
+    } else {
+      console.warn("ADMIN_EMAIL is not configured; skipping order notification.");
+    }
 
     return new Response(JSON.stringify(populatedOrder), { status: 201 });
   } catch (error) {
     console.error("Checkout Error:", error);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Internal Server Error",
+        details: error.message || "Unknown error"
+      }),
+      { status: 500 }
+    );
   }
 }
